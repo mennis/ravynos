@@ -34,13 +34,28 @@
 #include <pthread/workqueue_syscalls.h>
 
 #ifdef KERNEL
-struct ksyn_waitq_element;
 #include <stdatomic.h>
+#include <kern/thread.h>
 #include <kern/thread_call.h>
 #include <kern/kcdata.h>
-#include <sys/pthread_shims.h>
 #include <sys/queue.h>
+#include <sys/proc.h>
 #include <sys/proc_info.h>
+
+struct ksyn_waitq_element {
+	TAILQ_ENTRY(ksyn_waitq_element) kwe_list;
+	void *          kwe_kwqqueue;
+	thread_t        kwe_thread;
+	uint16_t        kwe_state;
+	uint16_t        kwe_flags;
+	uint32_t        kwe_lockseq;
+	uint32_t        kwe_count;
+	uint32_t        kwe_psynchretval;
+	void *          kwe_uth;
+};
+typedef struct ksyn_waitq_element * ksyn_waitq_element_t;
+
+#include <sys/pthread_shims.h>
 
 #ifdef __arm64__
 #define PTHREAD_INLINE_RMW_ATOMICS 0
@@ -112,24 +127,13 @@ struct _pthread_registration_data {
 
 extern pthread_callbacks_t pthread_kern;
 
-struct ksyn_waitq_element {
-	TAILQ_ENTRY(ksyn_waitq_element) kwe_list;	/* link to other list members */
-	void *          kwe_kwqqueue;            	/* queue blocked on */
-	thread_t        kwe_thread;
-	uint16_t        kwe_state;			/* state */
-	uint16_t        kwe_flags;
-	uint32_t        kwe_lockseq;			/* the sequence of the entry */
-	uint32_t	kwe_count;			/* upper bound on number of matches still pending */
-	uint32_t 	kwe_psynchretval;		/* thread retval */
-	void		*kwe_uth;			/* uthread */
-};
-typedef struct ksyn_waitq_element * ksyn_waitq_element_t;
-
 #define PTH_DEFAULT_STACKSIZE 512*1024
 #define MAX_PTHREAD_SIZE 64*1024
 
 /* exported from the kernel but not present in any headers. */
+#if !defined(PTHREAD_BUILTIN)
 extern thread_t port_name_to_thread(mach_port_name_t port_name);
+#endif
 
 /* function declarations for pthread_kext.c */
 void pthread_init(void);
@@ -208,4 +212,3 @@ workq_markfree_threadstack(proc_t p, thread_t th, vm_map_t vmap,
 #endif // KERNEL
 
 #endif /* _SYS_PTHREAD_INTERNAL_H_ */
-

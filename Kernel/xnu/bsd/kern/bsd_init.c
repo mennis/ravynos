@@ -833,6 +833,11 @@ bsd_init(void)
 	bsd_init_kprintf("calling psem_lock_init\n");
 	psem_lock_init();
 
+#if defined(__arm64__)
+	/* arm64 has no kext prelink/loading path, so pthread.kext is built in. */
+	extern void pthread_kext_init(void);
+	pthread_kext_init();
+#endif
 	pthread_init();
 	/* POSIX Shm and Sem */
 	bsd_init_kprintf("calling pshm_cache_init\n");

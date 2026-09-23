@@ -5,6 +5,24 @@
 # Inline assembly doesn't interact well with LTO
 fbt_arm.o_CFLAGS_ADD += $(CFLAGS_NOLTO_FLAG)
 
+# The arm64 kernel carries pthread.kext built in until arm64 supports loading it.
+PTHREAD_BUILTIN_CFLAGS = \
+	-DXNU_KERNEL_PRIVATE -DPTHREAD_BUILTIN -D__PTHREAD_EXPOSE_INTERNALS__ \
+	-D_LIBC_NO_FEATURE_VERIFICATION \
+	-Wno-sign-conversion -Wno-int-conversion \
+	-Wno-implicit-function-declaration \
+	-Wno-incompatible-library-redeclaration -Wno-undef-prefix \
+	-I$(SOURCE_DIR)/../Extensions/pthread \
+	-I$(SOURCE_DIR)/../Extensions/pthread/kern \
+	-I$(SOURCE_DIR)/../../Libraries/Libsystem \
+	-I$(SOURCE_DIR)/../../Libraries/Libsystem/private \
+	-idirafter $(RAVYN_SDKROOT)/usr/include \
+	-I$(RAVYN_SDKROOT)/usr/local/include \
+	-I$(RAVYN_SDKROOT)/usr/local/include/kernel
+kern_init.o_CFLAGS_ADD += $(PTHREAD_BUILTIN_CFLAGS)
+kern_support.o_CFLAGS_ADD += $(PTHREAD_BUILTIN_CFLAGS)
+pthread_kext_synch.o_CFLAGS_ADD += $(PTHREAD_BUILTIN_CFLAGS)
+
 ######################################################################
 #END    Machine dependent Makefile fragment for arm
 ######################################################################

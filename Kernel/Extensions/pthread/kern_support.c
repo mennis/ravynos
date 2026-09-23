@@ -46,11 +46,17 @@
 #undef pthread_rwlockattr_t
 #undef pthread_rwlock_t
 
+#include "kern_internal.h"
+
 #include <sys/cdefs.h>
+#if !defined(PTHREAD_BUILTIN)
 #include <os/log.h>
+#endif
 
 // <rdar://problem/26158937> panic() should be marked noreturn
+#if !defined(PTHREAD_BUILTIN)
 extern void panic(const char *string, ...) __printflike(1,2) __dead2;
+#endif
 
 #include <sys/param.h>
 #include <sys/queue.h>
@@ -91,6 +97,7 @@ extern void panic(const char *string, ...) __printflike(1,2) __dead2;
 #include <kern/assert.h>
 #include <mach/mach_vm.h>
 #include <mach/mach_param.h>
+#include <mach/vm_statistics.h>
 #include <mach/thread_status.h>
 #include <mach/thread_policy.h>
 #include <mach/message.h>
@@ -481,7 +488,11 @@ _bsdthread_terminate(__unused struct proc *p,
 			kret = mach_vm_behavior_set(user_map, freeaddr, freesize, VM_BEHAVIOR_REUSABLE);
 #if MACH_ASSERT
 			if (kret != KERN_SUCCESS && kret != KERN_INVALID_ADDRESS) {
+#if defined(PTHREAD_BUILTIN)
+				printf("unable to make thread stack reusable (kr: %d)\n", kret);
+#else
 				os_log_error(OS_LOG_DEFAULT, "unable to make thread stack reusable (kr: %d)", kret);
+#endif
 			}
 #endif
 			kret = kret ? kret : mach_vm_protect(user_map, freeaddr, freesize, FALSE, VM_PROT_NONE);
@@ -673,12 +684,20 @@ workq_create_threadstack(proc_t p, vm_map_t vmap, mach_vm_offset_t *out_addr)
 
 	th_allocsize = workq_thread_allocsize(p, vmap, &guardsize);
 	kret = mach_vm_map(vmap, &stackaddr, th_allocsize, page_size - 1,
+#if defined(PTHREAD_BUILTIN)
+			(VM_MEMORY_STACK << 24) | VM_FLAGS_ANYWHERE, NULL, 0, FALSE,
+#else
 			VM_MAKE_TAG(VM_MEMORY_STACK) | VM_FLAGS_ANYWHERE, NULL, 0, FALSE,
+#endif
 			VM_PROT_DEFAULT, VM_PROT_ALL, VM_INHERIT_DEFAULT);
 
 	if (kret != KERN_SUCCESS) {
 		kret = mach_vm_allocate(vmap, &stackaddr, th_allocsize,
+#if defined(PTHREAD_BUILTIN)
+				(VM_MEMORY_STACK << 24) | VM_FLAGS_ANYWHERE);
+#else
 				VM_MAKE_TAG(VM_MEMORY_STACK) | VM_FLAGS_ANYWHERE);
+#endif
 	}
 
 	if (kret != KERN_SUCCESS) {
@@ -727,7 +746,11 @@ workq_markfree_threadstack(proc_t OS_UNUSED p, thread_t OS_UNUSED th,
 			freesize, VM_BEHAVIOR_REUSABLE);
 #if MACH_ASSERT
 	if (kr != KERN_SUCCESS && kr != KERN_INVALID_ADDRESS) {
+#if defined(PTHREAD_BUILTIN)
+		printf("unable to make thread stack reusable (kr: %d)\n", kr);
+#else
 		os_log_error(OS_LOG_DEFAULT, "unable to make thread stack reusable (kr: %d)", kr);
+#endif
 	}
 #endif
 }
@@ -933,9 +956,17 @@ workq_setup_thread(proc_t p, thread_t th, vm_map_t map, user_addr_t stackaddr,
 		vm_map_offset_t th_page = vm_map_trunc_page_mask(th_addrs.self, mask);
 		vm_map_offset_t stk_page = vm_map_trunc_page_mask(th_addrs.stack_top - 1, mask);
 		if (th_page != stk_page) {
-			vm_fault(map, stk_page, VM_PROT_READ | VM_PROT_WRITE, FALSE, THREAD_UNINT, NULL, 0);
+			vm_fault(map, stk_page, VM_PROT_READ | VM_PROT_WRITE, FALSE,
+#if defined(PTHREAD_BUILTIN)
+			    VM_KERN_MEMORY_STACK,
+#endif
+			    THREAD_UNINT, NULL, 0);
 		}
-		vm_fault(map, th_page, VM_PROT_READ | VM_PROT_WRITE, FALSE, THREAD_UNINT, NULL, 0);
+		vm_fault(map, th_page, VM_PROT_READ | VM_PROT_WRITE, FALSE,
+#if defined(PTHREAD_BUILTIN)
+		    VM_KERN_MEMORY_STACK,
+#endif
+		    THREAD_UNINT, NULL, 0);
 	}
 
 	if (setup_flags & WQ_SETUP_EXIT_THREAD) {
@@ -1016,5 +1047,8 @@ _pthread_init(void)
 		pthread_mutex_default_policy = policy_bootarg;
 	}
 
+#if !defined(PTHREAD_BUILTIN)
+	/* Built-in SYSCTLs are registered from the kernel linker set. */
 	sysctl_register_oid(&sysctl__kern_pthread_mutex_default_policy);
+#endif
 }

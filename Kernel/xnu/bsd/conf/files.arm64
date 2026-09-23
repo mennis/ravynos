@@ -23,3 +23,9 @@ bsd/dev/arm64/sdt_arm.c		optional config_dtrace
 bsd/dev/pgtrace/pgtrace_dev.c   optional config_pgtrace_nonkext
 
 bsd/kern/bsd_stubs.c		standard
+
+# pthread.kext cannot be loaded on arm64 until a prelink/loading path exists.
+# Build its implementation into the kernel; bsd_init registers its shim table.
+../Extensions/pthread/kern_init.c	standard
+../Extensions/pthread/kern_support.c	standard
+bsd/pthread/pthread_kext_synch.c	standard

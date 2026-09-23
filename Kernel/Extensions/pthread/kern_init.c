@@ -6,14 +6,16 @@
 //  Copyright (c) 2012 Matt Wright. All rights reserved.
 //
 
+#include "kern_internal.h"
 #include <kern/thread.h>
 #include <kern/debug.h>
-#include "kern_internal.h"
 
 kern_return_t pthread_start(kmod_info_t * ki, void *d);
 kern_return_t pthread_stop(kmod_info_t *ki, void *d);
 
+#if !defined(PTHREAD_BUILTIN)
 pthread_callbacks_t pthread_kern;
+#endif
 
 const struct pthread_functions_s pthread_internal_functions = {
 	.pthread_init = _pthread_init,
@@ -46,10 +48,17 @@ const struct pthread_functions_s pthread_internal_functions = {
 	.workq_markfree_threadstack = workq_markfree_threadstack,
 };
 
+void
+pthread_kext_init(void)
+{
+	pthread_kext_register((pthread_functions_t)&pthread_internal_functions,
+	    &pthread_kern);
+}
+
 kern_return_t pthread_start(__unused kmod_info_t * ki, __unused void *d)
 {
     kprintf("Starting pthread kext\n");
-	pthread_kext_register((pthread_functions_t)&pthread_internal_functions, &pthread_kern);
+	pthread_kext_init();
 	return KERN_SUCCESS;
 }
 
@@ -59,9 +68,11 @@ kern_return_t pthread_stop(__unused kmod_info_t *ki, __unused void *d)
 	return KERN_FAILURE;
 }
 
+#if !defined(PTHREAD_BUILTIN)
 struct uthread*
 current_uthread(void)
 {
 	thread_t th = current_thread();
 	return pthread_kern->get_bsdthread_info(th);
 }
+#endif

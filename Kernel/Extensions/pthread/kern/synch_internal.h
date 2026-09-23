@@ -21,8 +21,8 @@
  * @APPLE_LICENSE_HEADER_END@
  */
 
-#ifndef __SYNCH_INTERNAL_H__
-#define __SYNCH_INTERNAL_H__
+#ifndef _PTHREAD_KEXT_SYNCH_INTERNAL_H_
+#define _PTHREAD_KEXT_SYNCH_INTERNAL_H_
 
 // kwe_state
 enum {
@@ -170,4 +170,4 @@ find_diff(uint32_t upto, uint32_t lowest)
 	return(diff);
 }
 
-#endif /* __SYNCH_INTERNAL_H__ */
+#endif /* _PTHREAD_KEXT_SYNCH_INTERNAL_H_ */
