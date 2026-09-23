@@ -41,6 +41,7 @@ class RavynBCM2837PlatformExpert : public IODTPlatformExpert
 	OSDeclareDefaultStructors(RavynBCM2837PlatformExpert);
 
 public:
+	virtual bool start(IOService *provider) APPLE_KEXT_OVERRIDE;
 	virtual const char *deleteList(void) APPLE_KEXT_OVERRIDE;
 	virtual const char *excludeList(void) APPLE_KEXT_OVERRIDE;
 };
@@ -79,6 +80,24 @@ public:
 };
 
 OSDefineMetaClassAndStructors(RavynBCM2837CPU, IOCPU);
+
+/*
+ * IOPlatformExpert::start does not register the service, so nothing waiting
+ * on IOPlatformExpert matching would find it. On embedded configs
+ * IOSecureBSDRoot waits 30 s for one and asserts it exists
+ * (iokit/bsddev/IOKitBSDInit.cpp:737-741). ACPIPlatformExpert registers
+ * itself the same way on x86 (Kernel/Extensions/IOACPIFamily/
+ * ACPIPlatformExpert.cpp:150).
+ */
+bool
+RavynBCM2837PlatformExpert::start(IOService *provider)
+{
+	if (!IODTPlatformExpert::start(provider)) {
+		return false;
+	}
+	registerService();
+	return true;
+}
 
 const char *
 RavynBCM2837PlatformExpert::deleteList(void)
