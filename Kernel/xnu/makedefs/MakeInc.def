@@ -283,7 +283,6 @@ CFLAGS_GEN = $(DEBUG_CFLAGS) -nostdinc -w \
     -fmerge-all-constants \
     -fno-stack-clash-protection \
     -fno-stack-check \
-    -mno-stack-arg-probe \
     $(OTHER_CFLAGS)
 
 
@@ -294,7 +293,8 @@ CFLAGS_KASAN = $(CFLAGS_DEVELOPMENT)
 CFLAGS_PROFILE  =  -pg
 
 CFLAGS_X86_64   = -Dx86_64 -DX86_64 -D__X86_64__ -DLP64 \
-                -DPAGE_SIZE_FIXED -mkernel -msoft-float
+                -DPAGE_SIZE_FIXED -mkernel -msoft-float \
+                -mno-stack-arg-probe
 
 CFLAGS_X86_64H = $(CFLAGS_X86_64)
 
