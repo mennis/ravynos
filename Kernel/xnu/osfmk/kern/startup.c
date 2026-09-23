@@ -596,6 +596,13 @@ kernel_bootstrap_thread(void)
 #endif
 	(void) spllo();         /* Allow interruptions */
 
+#if defined(__arm64__)
+	/* arm64 cannot load the corecrypto kext; install it before the first
+	 * post-IOKit consumer of the kernel PRNG below. */
+	extern void corecrypto_kext_init(void);
+	corecrypto_kext_init();
+#endif
+
 #if (defined(__i386__) || defined(__x86_64__)) && NCOPY_WINDOWS > 0
 	/*
 	 * Create and initialize the copy window for processor 0

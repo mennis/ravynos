@@ -50,22 +50,28 @@ SMFAPI MMPTR mmMalloc(DWORD request)
 {
     // since kfree requires that we pass in the alloc size, add enough bytes to store a dword
     void* mem;
+    unsigned long size = sizeof(unsigned long) + request;
     
-    mem = OSMalloc(sizeof(unsigned long) + request, mmtag);
+    mem = OSMalloc(size, mmtag);
     
     if (mem == 0) // oops, it didn't appear to work
     {
         printf ("Couldn't allocate kernel memory!\n");
         return NULL;
     }
-    
-    return (MMPTR) (mem + sizeof(unsigned long));
+
+    *(unsigned long *)mem = size;
+    return (MMPTR)((char *)mem + sizeof(unsigned long));
 }
 
 SMFAPI void mmFree(MMPTR ptrnum)
 {
+    if (ptrnum == NULL) {
+        return;
+    }
+
     // get the size of the pointer back
-    ptrnum -= sizeof(unsigned long);
+    ptrnum = (MMPTR)((char *)ptrnum - sizeof(unsigned long));
     unsigned long size = *(unsigned long *)ptrnum;
     OSFree(ptrnum, size, mmtag);
 }
@@ -80,4 +86,3 @@ SMFAPI void mmReturnPtr(__unused MMPTR ptrnum)
 	/* nothing */
 	return;
 }
-

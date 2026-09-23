@@ -23,6 +23,29 @@ kern_init.o_CFLAGS_ADD += $(PTHREAD_BUILTIN_CFLAGS)
 kern_support.o_CFLAGS_ADD += $(PTHREAD_BUILTIN_CFLAGS)
 pthread_kext_synch.o_CFLAGS_ADD += $(PTHREAD_BUILTIN_CFLAGS)
 
+# The arm64 kernel carries corecrypto.kext built in until arm64 supports
+# prelinked or dynamically loaded kexts.  These flags mirror the kext makefile.
+CORECRYPTO_BUILTIN_CFLAGS = \
+	-DXNU_KERNEL_PRIVATE=1 -DPRIVATE=1 -DCC_KERNEL=1 \
+	-DCORECRYPTO_BUILTIN=1 \
+	-Wno-sign-conversion -Wno-int-conversion \
+	-Wno-implicit-function-declaration \
+	-Wno-incompatible-library-redeclaration \
+	-Wno-undef-prefix \
+	-I$(SOURCE_DIR)/../Extensions/corecrypto \
+	-I$(SOURCE_DIR)/../Extensions/corecrypto/kext \
+	-I$(SOURCE_DIR)/../Extensions/corecrypto/include \
+	-I$(SOURCE_DIR)/../Extensions/corecrypto/algorithms \
+	-I$(SOURCE_DIR)/../Extensions/corecrypto/algorithms/yarrow
+CORECRYPTO_BUILTIN_OBJS = \
+	cc_debug.o cc_digest.o cc_functions.o cc_kext_main.o cckprng.o \
+	aes_ecb.o corecrypto_sha512_builtin.o md5_impl.o comp.o smf.o sha1.o \
+	sha1mod.o prng.o aes128.o aes_cbc.o md5.o \
+	yarrowUtils.o pdcrypto_digest_final.o corecrypto_sha1_builtin.o \
+	pdcrypto_dummy.o
+$(foreach _obj,$(CORECRYPTO_BUILTIN_OBJS),\
+	$(eval $(_obj)_CFLAGS_ADD += $(CORECRYPTO_BUILTIN_CFLAGS)))
+
 ######################################################################
 #END    Machine dependent Makefile fragment for arm
 ######################################################################

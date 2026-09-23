@@ -29,3 +29,27 @@ bsd/kern/bsd_stubs.c		standard
 ../Extensions/pthread/kern_init.c	standard
 ../Extensions/pthread/kern_support.c	standard
 bsd/pthread/pthread_kext_synch.c	standard
+
+# corecrypto.kext cannot be loaded on arm64 until a prelink/loading path exists.
+# The kernel already supplies cc_clear and cc_cmp_safe, so do not compile the
+# duplicate copies from the kext.
+../Extensions/corecrypto/cc_debug.c	standard
+../Extensions/corecrypto/cc_digest.c	standard
+../Extensions/corecrypto/kext/cc_functions.c	standard
+../Extensions/corecrypto/kext/cc_kext_main.c	standard
+../Extensions/corecrypto/algorithms/cckprng.c	standard
+../Extensions/corecrypto/algorithms/aes_ecb.c	standard
+bsd/crypto/corecrypto_sha512_builtin.cpp	standard
+../Extensions/corecrypto/algorithms/md5_impl.cpp	standard
+../Extensions/corecrypto/algorithms/yarrow/comp.c	standard
+../Extensions/corecrypto/algorithms/yarrow/smf.c	standard
+../Extensions/corecrypto/algorithms/sha1.c	standard
+../Extensions/corecrypto/algorithms/yarrow/sha1mod.c	standard
+../Extensions/corecrypto/algorithms/yarrow/prng.c	standard
+../Extensions/corecrypto/algorithms/aes128.c	standard
+../Extensions/corecrypto/algorithms/aes_cbc.c	standard
+../Extensions/corecrypto/algorithms/md5.c	standard
+../Extensions/corecrypto/algorithms/yarrow/yarrowUtils.c	standard
+../Extensions/corecrypto/algorithms/pdcrypto_digest_final.c	standard
+bsd/crypto/corecrypto_sha1_builtin.cpp	standard
+../Extensions/corecrypto/algorithms/pdcrypto_dummy.c	standard

@@ -12,7 +12,11 @@
 #include <corecrypto/ccmode.h>
 #include <corecrypto/ccaes.h>
 #include <corecrypto/ccn.h>
+#if defined(CORECRYPTO_BUILTIN)
+#include "../cc_abort.h"
+#else
 #include <corecrypto/cc_abort.h>
+#endif
 
 #include "aes128.h"
 

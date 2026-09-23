@@ -1,5 +1,9 @@
 #include "register_crypto.h"
+#if defined(CORECRYPTO_BUILTIN)
+#include "../cc_abort.h"
+#else
 #include <corecrypto/cc_abort.h>
+#endif
 #include <corecrypto/ccmd5.h>
 #include <corecrypto/ccsha1.h>
 #include "../algorithms/pdcrypto_dummy.h"
@@ -59,4 +63,3 @@ const struct crypto_functions pdcrypto_internal_functions = {
 
 	.ccrng_fn = ccrng
 };
-
