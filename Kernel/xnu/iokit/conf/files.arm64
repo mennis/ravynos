@@ -1,4 +1,5 @@
 iokit/Families/IONVRAM/IONVRAMController.cpp				optional iokitcpp
+iokit/Kernel/arm64/RavynBCM2837PlatformExpert.cpp		optional iokitcpp
 
 # Power Domains
 iokit/Kernel/IOPMrootDomain.cpp    					optional iokitcpp

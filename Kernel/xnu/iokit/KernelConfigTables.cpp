@@ -34,6 +34,20 @@
 
 const char * gIOKernelConfigTables =
     "("
+#if defined(__arm64__)
+    "   {"
+    "     'IOClass'         = RavynBCM2837PlatformExpert;"
+    "     'IOProviderClass' = IOPlatformExpertDevice;"
+    "     'IONameMatch'     = \"RaspberryPi3,1\";"
+    "     'IOProbeScore'    = 1000:32;"
+    "   },"
+    "   {"
+    "     'IOClass'         = RavynBCM2837CPU;"
+    "     'IOProviderClass' = IOPlatformDevice;"
+    "     'IONameMatch'     = cpu0;"
+    "     'IOProbeScore'    = 1000:32;"
+    "   },"
+#endif
     "   {"
     "     'IOClass'         = IOPanicPlatform;"
     "     'IOProviderClass' = IOPlatformExpertDevice;"
