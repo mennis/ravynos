@@ -47,6 +47,12 @@ const char * gIOKernelConfigTables =
     "     'IONameMatch'     = cpu0;"
     "     'IOProbeScore'    = 1000:32;"
     "   },"
+    "   {"
+    "     'IOClass'         = \"com_apple_filesystems_hfs\";"
+    "     'IOMatchCategory' = \"com_apple_filesystems_hfs\";"
+    "     'IOProviderClass' = \"IOResources\";"
+    "     'IOResourceMatch' = \"IOBSD\";"
+    "   },"
 #endif
     "   {"
     "     'IOClass'         = IOPanicPlatform;"
