@@ -23,6 +23,33 @@ kern_init.o_CFLAGS_ADD += $(PTHREAD_BUILTIN_CFLAGS)
 kern_support.o_CFLAGS_ADD += $(PTHREAD_BUILTIN_CFLAGS)
 pthread_kext_synch.o_CFLAGS_ADD += $(PTHREAD_BUILTIN_CFLAGS)
 
+HFS_BUILTIN_CFLAGS = \
+	-DPRIVATE=1 -DKERNEL=1 -D__APPLE_API_PRIVATE=1 -DHFS_BUILTIN=1 \
+	-UCONFIG_PROTECT \
+	-Wno-implicit-int-conversion -Wno-sign-conversion \
+	-Wno-implicit-function-declaration \
+	-I$(SOURCE_DIR)/../Extensions/hfs/core \
+	-I$(SOURCE_DIR)/../Extensions/IOStorageFamily \
+	-I$(RAVYN_SDKROOT)/System/Library/Frameworks/System.framework/PrivateHeaders \
+	-include $(SOURCE_DIR)/osfmk/libsa/i386/types.h \
+	-include $(SOURCE_DIR)/bsd/sys/disk.h \
+	-include $(SOURCE_DIR)/bsd/sys/fcntl.h \
+	-include $(SOURCE_DIR)/bsd/sys/attr.h
+HFS_BUILTIN_OBJS = \
+	hfs_resize.o hfs_vnops.o hfs_btreeio.o BTreeNodeOps.o BTree.o \
+	rangelist.o hfs_journal.o hfs_fsinfo.o hfs_chash.o hfs_xattr.o \
+	FileIDsServices.o hfs_extents.o hfs_endian.o hfs_cprotect.o \
+	hfs_readwrite.o CatalogUtilities.o BTreeWrapper.o hfs_catalog.o \
+	hfs_hotfiles.o hfs_quota.o hfs_lookup.o hfs_search.o hfs_vfsops.o \
+	BTreeAllocate.o VolumeAllocation.o hfs_cnode.o BTreeTreeOps.o \
+	BTreeMiscOps.o FileExtentMapping.o BTreeNodeReserve.o hfs_vfsutils.o \
+	hfs_attrlist.o MacOSStubs.o BTreeScanner.o UnicodeWrappers.o \
+	hfs_notification.o hfs_link.o hfs_iokit.o
+HFS_BUILTIN_OBJS += hfs_encodinghint.o
+$(foreach _obj,$(HFS_BUILTIN_OBJS),\
+	$(eval $(_obj)_CFLAGS_ADD += $(HFS_BUILTIN_CFLAGS)))
+hfs_iokit.cpo_CFLAGS_ADD += $(HFS_BUILTIN_CFLAGS)
+
 # The arm64 kernel carries corecrypto.kext built in until arm64 supports
 # prelinked or dynamically loaded kexts.  These flags mirror the kext makefile.
 CORECRYPTO_BUILTIN_CFLAGS = \

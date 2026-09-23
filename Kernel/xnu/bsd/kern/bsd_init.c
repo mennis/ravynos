@@ -766,6 +766,11 @@ bsd_init(void)
 	/* Initialize the file systems. */
 	bsd_init_kprintf("calling vfsinit\n");
 	vfsinit();
+#if defined(__arm64__)
+	/* arm64 has no kext loading path, so register the built-in HFS module. */
+	extern void hfs_kext_init(void);
+	hfs_kext_init();
+#endif
 
 	/* Initialize file locks. */
 	bsd_init_kprintf("calling lf_init\n");

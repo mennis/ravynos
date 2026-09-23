@@ -124,6 +124,7 @@ bool com_apple_filesystems_hfs::start(IOService *provider)
 	
 	hfs_sysctl_register();
 
+#if !defined(HFS_BUILTIN)
 	uint32_t num_cpus;
 	size_t sz = sizeof(num_cpus);
 
@@ -135,6 +136,7 @@ bool com_apple_filesystems_hfs::start(IOService *provider)
 			_hfs_max_file_origins = 2 * num_cpus;
 		}
 	}
+#endif
 
 	return true;
 }
@@ -149,6 +151,40 @@ void com_apple_filesystems_hfs::stop(IOService *provider)
 
 	super::stop(provider);
 }
+
+#if defined(HFS_BUILTIN)
+extern "C" void
+hfs_kext_init(void)
+{
+	static vfstable_t vfs_handle;
+	struct vnodeopv_desc *op_descs[] = {
+		&hfs_vnodeop_opv_desc,
+#if CONFIG_HFS_STD
+		&hfs_std_vnodeop_opv_desc,
+#endif
+		&hfs_specop_opv_desc,
+#if FIFO
+		&hfs_fifoop_opv_desc,
+#endif
+	};
+	struct vfs_fsentry vfe = {
+		.vfe_vfsops = &hfs_vfsops,
+		.vfe_vopcnt = sizeof(op_descs) / sizeof(*op_descs),
+		.vfe_opvdescs = op_descs,
+		.vfe_fsname = "hfs",
+		.vfe_flags = (VFS_TBLNOTYPENUM | VFS_TBLLOCALVOL |
+		    VFS_TBLREADDIR_EXTENDED | VFS_TBL64BITREADY |
+		    VFS_TBLVNOP_PAGEOUTV2 | VFS_TBLVNOP_PAGEINV2 |
+		    VFS_TBLTHREADSAFE | VFS_TBLCANMOUNTROOT |
+		    VFS_TBLVNOP_SECLUDE_RENAME | VFS_TBLNATIVEXATTR)
+	};
+	int ret = vfs_fsadd(&vfe, &vfs_handle);
+	if (ret) {
+		panic("hfs: built-in vfs_fsadd failed: %d", ret);
+	}
+	hfs_init_zones();
+}
+#endif
 
 int hfs_is_ejectable(const char *cdev_name)
 {
