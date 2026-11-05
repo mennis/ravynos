@@ -922,8 +922,9 @@ KLDBootstrap::readBuiltinPersonalities(void)
 	 * the mach_kernel image.
 	 */
 	infosect   = getsectbyname("__BUILTIN", "__info");
-	if (!infosect) {
-		// this isn't fatal
+	if (!infosect || !infosect->size) {
+		// this isn't fatal; the kernel link creates the section empty, and its
+		// address is then the start of whatever follows it
 		goto finish;
 	}
 
