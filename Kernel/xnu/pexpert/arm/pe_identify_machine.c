@@ -122,14 +122,15 @@ pe_identify_machine(boot_args * bootArgs)
 			/* Find the time base frequency first. */
 			if (DTGetProperty(cpu, "timebase-frequency", (void **)&value, &size) == kSuccess) {
 				/*
-				 * timebase_frequency_hz is only 32 bits, and
-				 * the device tree should never provide 64
-				 * bits so this if should never be taken.
+				 * value is an unsigned long *, 8 bytes on arm64, so
+				 * a 4-byte property must be read as 32 bits.
+				 * Dereferencing value directly read the next
+				 * property's name into the high word.
 				 */
 				if (size == 8) {
 					gPEClockFrequencyInfo.timebase_frequency_hz = *(unsigned long long *)value;
 				} else {
-					gPEClockFrequencyInfo.timebase_frequency_hz = *value;
+					gPEClockFrequencyInfo.timebase_frequency_hz = *(uint32_t *)value;
 				}
 			}
 			gPEClockFrequencyInfo.dec_clock_rate_hz = gPEClockFrequencyInfo.timebase_frequency_hz;
@@ -139,7 +140,7 @@ pe_identify_machine(boot_args * bootArgs)
 				if (size == 8) {
 					gPEClockFrequencyInfo.bus_frequency_hz = *(unsigned long long *)value;
 				} else {
-					gPEClockFrequencyInfo.bus_frequency_hz = *value;
+					gPEClockFrequencyInfo.bus_frequency_hz = *(uint32_t *)value;
 				}
 			}
 			gPEClockFrequencyInfo.bus_frequency_min_hz = gPEClockFrequencyInfo.bus_frequency_hz;
@@ -156,7 +157,7 @@ pe_identify_machine(boot_args * bootArgs)
 				if (size == 8) {
 					gPEClockFrequencyInfo.mem_frequency_hz = *(unsigned long long *)value;
 				} else {
-					gPEClockFrequencyInfo.mem_frequency_hz = *value;
+					gPEClockFrequencyInfo.mem_frequency_hz = *(uint32_t *)value;
 				}
 			}
 			gPEClockFrequencyInfo.mem_frequency_min_hz = gPEClockFrequencyInfo.mem_frequency_hz;
@@ -167,7 +168,7 @@ pe_identify_machine(boot_args * bootArgs)
 				if (size == 8) {
 					gPEClockFrequencyInfo.prf_frequency_hz = *(unsigned long long *)value;
 				} else {
-					gPEClockFrequencyInfo.prf_frequency_hz = *value;
+					gPEClockFrequencyInfo.prf_frequency_hz = *(uint32_t *)value;
 				}
 			}
 			gPEClockFrequencyInfo.prf_frequency_min_hz = gPEClockFrequencyInfo.prf_frequency_hz;
@@ -178,7 +179,7 @@ pe_identify_machine(boot_args * bootArgs)
 				if (size == 8) {
 					gPEClockFrequencyInfo.fix_frequency_hz = *(unsigned long long *)value;
 				} else {
-					gPEClockFrequencyInfo.fix_frequency_hz = *value;
+					gPEClockFrequencyInfo.fix_frequency_hz = *(uint32_t *)value;
 				}
 			}
 			/* Find the cpu frequency last. */
@@ -186,7 +187,7 @@ pe_identify_machine(boot_args * bootArgs)
 				if (size == 8) {
 					gPEClockFrequencyInfo.cpu_frequency_hz = *(unsigned long long *)value;
 				} else {
-					gPEClockFrequencyInfo.cpu_frequency_hz = *value;
+					gPEClockFrequencyInfo.cpu_frequency_hz = *(uint32_t *)value;
 				}
 			}
 			gPEClockFrequencyInfo.cpu_frequency_min_hz = gPEClockFrequencyInfo.cpu_frequency_hz;
