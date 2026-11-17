@@ -23,16 +23,25 @@
  *   the physical generic timer as FIQ; sleh_fiq handles it in osfmk by calling
  *   rtclock_intr directly (osfmk/arm64/sleh.c:1582-1656).  IOKit must not
  *   install a handler for that timer.
- * - The only early IOKit time waits are IORTC and, on x86, IONVRAM;
- *   BCM2837 explicitly skips IORTC and arm64 does not wait for IONVRAM
- *   (iokit/Kernel/IOStartIOKit.cpp:67-84).  Publishing a fake NVRAM service is
- *   therefore neither required nor desirable.
+ * - The only early IOKit time waits are IORTC and, on x86, IONVRAM; arm64
+ *   does not wait for IONVRAM (iokit/Kernel/IOStartIOKit.cpp:67-84).
+ *   Publishing a fake NVRAM service is therefore neither required nor
+ *   desirable.  IORTC is published by start() below once the calendar source
+ *   is mapped, so clock_initialize_calendar never runs before
+ *   getGMTTimeOfDay can answer.
+ * - The Pi 3 has no RTC.  xnuhv supplies a PL031-compatible one and describes
+ *   it at /arm-io/rtc; its "reg" is an offset from the arm-io "ranges" parent
+ *   address, as for every other arm-io child.  Without the node,
+ *   getGMTTimeOfDay returns 0 and the calendar starts in 1970.
  * - IODTPlatformExpert already implements model/machine names from the root
  *   compatible/model properties (iokit/Kernel/IOPlatformExpert.cpp:1613-1665).
  */
 
 #include <IOKit/IOPlatformExpert.h>
 #include <IOKit/IOCPU.h>
+#include <IOKit/IODeviceMemory.h>
+#include <IOKit/IODeviceTreeSupport.h>
+#include <IOKit/IOLib.h>
 
 #define super IODTPlatformExpert
 
@@ -44,6 +53,14 @@ public:
 	virtual bool start(IOService *provider) APPLE_KEXT_OVERRIDE;
 	virtual const char *deleteList(void) APPLE_KEXT_OVERRIDE;
 	virtual const char *excludeList(void) APPLE_KEXT_OVERRIDE;
+	virtual long getGMTTimeOfDay(void) APPLE_KEXT_OVERRIDE;
+	virtual void setGMTTimeOfDay(long secs) APPLE_KEXT_OVERRIDE;
+
+private:
+	IOMemoryMap *rtcMap;
+	volatile uint32_t *rtcRegs;
+
+	void mapRTC(void);
 };
 
 OSDefineMetaClassAndStructors(RavynBCM2837PlatformExpert, IODTPlatformExpert);
@@ -95,8 +112,64 @@ RavynBCM2837PlatformExpert::start(IOService *provider)
 	if (!IODTPlatformExpert::start(provider)) {
 		return false;
 	}
+	mapRTC();
 	registerService();
+	publishResource("IORTC", this);
 	return true;
+}
+
+/* PL031 registers (ARM DDI 0224): DR is the seconds counter, LR loads it. */
+enum {
+	kPL031DR = 0x000 / sizeof(uint32_t),
+	kPL031LR = 0x008 / sizeof(uint32_t),
+};
+
+/*
+ * Map /arm-io/rtc.  Both properties are pairs or triples of 64-bit cells
+ * (#address-cells = #size-cells = 2): arm-io "ranges" is {child, parent,
+ * size}, rtc "reg" is {offset, size}.  The same arithmetic pe_serial.c uses
+ * for the UART (soc base + reg[0]).
+ */
+void
+RavynBCM2837PlatformExpert::mapRTC(void)
+{
+	IORegistryEntry *io = IORegistryEntry::fromPath("/arm-io", gIODTPlane);
+	IORegistryEntry *rtc = IORegistryEntry::fromPath("/arm-io/rtc", gIODTPlane);
+	OSData *ranges = io ? OSDynamicCast(OSData, io->getProperty("ranges")) : NULL;
+	OSData *reg = rtc ? OSDynamicCast(OSData, rtc->getProperty("reg")) : NULL;
+
+	if (ranges && ranges->getLength() >= 2 * sizeof(uint64_t) &&
+	    reg && reg->getLength() >= 2 * sizeof(uint64_t)) {
+		const uint64_t *r = (const uint64_t *)ranges->getBytesNoCopy();
+		const uint64_t *g = (const uint64_t *)reg->getBytesNoCopy();
+		IODeviceMemory *mem = IODeviceMemory::withRange(r[1] + g[0], g[1]);
+		if (mem) {
+			rtcMap = mem->map(kIOMapInhibitCache);
+			mem->release();
+		}
+		if (rtcMap) {
+			rtcRegs = (volatile uint32_t *)rtcMap->getVirtualAddress();
+		}
+	}
+	if (!rtcRegs) {
+		IOLog("RavynBCM2837PlatformExpert: no /arm-io/rtc; calendar starts at 0\n");
+	}
+	OSSafeReleaseNULL(io);
+	OSSafeReleaseNULL(rtc);
+}
+
+long
+RavynBCM2837PlatformExpert::getGMTTimeOfDay(void)
+{
+	return rtcRegs ? (long)rtcRegs[kPL031DR] : 0;
+}
+
+void
+RavynBCM2837PlatformExpert::setGMTTimeOfDay(long secs)
+{
+	if (rtcRegs) {
+		rtcRegs[kPL031LR] = (uint32_t)secs;
+	}
 }
 
 const char *
