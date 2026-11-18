@@ -37,7 +37,15 @@
 // #define HFS_MALLOC_DEBUG 1
 // #define HFS_LEAK_DEBUG 1
 
-#if (TARGET_OS_IPHONE && !TARGET_OS_SIMULATOR) // iOS (real hardware)
+#if defined(HFS_BUILTIN)
+
+/* The ravynOS arm64 kernel uses the desktop HFS feature set. */
+#define QUOTA 1
+#define NAMEDSTREAMS 1
+#define CONFIG_HFS_DIRLINK 1
+#define CONFIG_SEARCHFS 1
+
+#elif (TARGET_OS_IPHONE && !TARGET_OS_SIMULATOR) // iOS (real hardware)
 
 #define QUOTA 0
 #define CONFIG_PROTECT 1

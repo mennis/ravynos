@@ -302,8 +302,20 @@
 // 0     M              MMU enable
 #define SCTLR_M_ENABLED           (1ULL << 0)
 
+/*
+ * A kernel built without PAN support never clears PSTATE.PAN around user
+ * accesses (copyio.c). SPAN is RES1 on a CPU without PAN, and on one with PAN,
+ * such as a BCM2837 guest on Apple silicon, leaving it clear sets PAN on every
+ * exception to EL1, and copyin then faults on user memory forever.
+ */
+#if __ARM_PAN_AVAILABLE__
+#define SCTLR_SPAN_DEFAULT        0
+#else
+#define SCTLR_SPAN_DEFAULT        SCTLR_PAN_UNCHANGED
+#endif
+
 #define SCTLR_EL1_DEFAULT \
-	(SCTLR_RESERVED | SCTLR_UCI_ENABLED | SCTLR_nTWE_WFE_ENABLED | SCTLR_DZE_ENABLED | \
+	(SCTLR_RESERVED | SCTLR_SPAN_DEFAULT | SCTLR_UCI_ENABLED | SCTLR_nTWE_WFE_ENABLED | SCTLR_DZE_ENABLED | \
 	 SCTLR_I_ENABLED | SCTLR_SED_DISABLED | SCTLR_CP15BEN_ENABLED |                    \
 	 SCTLR_SA0_ENABLED | SCTLR_SA_ENABLED | SCTLR_C_ENABLED | SCTLR_M_ENABLED)
 

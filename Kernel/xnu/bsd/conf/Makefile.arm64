@@ -5,6 +5,74 @@
 # Inline assembly doesn't interact well with LTO
 fbt_arm.o_CFLAGS_ADD += $(CFLAGS_NOLTO_FLAG)
 
+# The arm64 kernel carries pthread.kext built in until arm64 supports loading it.
+PTHREAD_BUILTIN_CFLAGS = \
+	-DXNU_KERNEL_PRIVATE -DPTHREAD_BUILTIN -D__PTHREAD_EXPOSE_INTERNALS__ \
+	-D_LIBC_NO_FEATURE_VERIFICATION \
+	-Wno-sign-conversion -Wno-int-conversion \
+	-Wno-implicit-function-declaration \
+	-Wno-incompatible-library-redeclaration -Wno-undef-prefix \
+	-I$(SOURCE_DIR)/../Extensions/pthread \
+	-I$(SOURCE_DIR)/../Extensions/pthread/kern \
+	-I$(SOURCE_DIR)/../../Libraries/Libsystem \
+	-I$(SOURCE_DIR)/../../Libraries/Libsystem/private \
+	-idirafter $(RAVYN_SDKROOT)/usr/include \
+	-I$(RAVYN_SDKROOT)/usr/local/include \
+	-I$(RAVYN_SDKROOT)/usr/local/include/kernel
+kern_init.o_CFLAGS_ADD += $(PTHREAD_BUILTIN_CFLAGS)
+kern_support.o_CFLAGS_ADD += $(PTHREAD_BUILTIN_CFLAGS)
+pthread_kext_synch.o_CFLAGS_ADD += $(PTHREAD_BUILTIN_CFLAGS)
+
+HFS_BUILTIN_CFLAGS = \
+	-DPRIVATE=1 -DKERNEL=1 -D__APPLE_API_PRIVATE=1 -DHFS_BUILTIN=1 \
+	-UCONFIG_PROTECT \
+	-Wno-implicit-int-conversion -Wno-sign-conversion \
+	-Wno-implicit-function-declaration \
+	-I$(SOURCE_DIR)/../Extensions/hfs/core \
+	-I$(SOURCE_DIR)/../Extensions/IOStorageFamily \
+	-I$(RAVYN_SDKROOT)/System/Library/Frameworks/System.framework/PrivateHeaders \
+	-include $(SOURCE_DIR)/osfmk/libsa/i386/types.h \
+	-include $(SOURCE_DIR)/bsd/sys/disk.h \
+	-include $(SOURCE_DIR)/bsd/sys/fcntl.h \
+	-include $(SOURCE_DIR)/bsd/sys/attr.h
+HFS_BUILTIN_OBJS = \
+	hfs_resize.o hfs_vnops.o hfs_btreeio.o BTreeNodeOps.o BTree.o \
+	rangelist.o hfs_journal.o hfs_fsinfo.o hfs_chash.o hfs_xattr.o \
+	FileIDsServices.o hfs_extents.o hfs_endian.o hfs_cprotect.o \
+	hfs_readwrite.o CatalogUtilities.o BTreeWrapper.o hfs_catalog.o \
+	hfs_hotfiles.o hfs_quota.o hfs_lookup.o hfs_search.o hfs_vfsops.o \
+	BTreeAllocate.o VolumeAllocation.o hfs_cnode.o BTreeTreeOps.o \
+	BTreeMiscOps.o FileExtentMapping.o BTreeNodeReserve.o hfs_vfsutils.o \
+	hfs_attrlist.o MacOSStubs.o BTreeScanner.o UnicodeWrappers.o \
+	hfs_notification.o hfs_link.o hfs_iokit.o
+HFS_BUILTIN_OBJS += hfs_encodinghint.o
+$(foreach _obj,$(HFS_BUILTIN_OBJS),\
+	$(eval $(_obj)_CFLAGS_ADD += $(HFS_BUILTIN_CFLAGS)))
+hfs_iokit.cpo_CFLAGS_ADD += $(HFS_BUILTIN_CFLAGS)
+
+# The arm64 kernel carries corecrypto.kext built in until arm64 supports
+# prelinked or dynamically loaded kexts.  These flags mirror the kext makefile.
+CORECRYPTO_BUILTIN_CFLAGS = \
+	-DXNU_KERNEL_PRIVATE=1 -DPRIVATE=1 -DCC_KERNEL=1 \
+	-DCORECRYPTO_BUILTIN=1 \
+	-Wno-sign-conversion -Wno-int-conversion \
+	-Wno-implicit-function-declaration \
+	-Wno-incompatible-library-redeclaration \
+	-Wno-undef-prefix \
+	-I$(SOURCE_DIR)/../Extensions/corecrypto \
+	-I$(SOURCE_DIR)/../Extensions/corecrypto/kext \
+	-I$(SOURCE_DIR)/../Extensions/corecrypto/include \
+	-I$(SOURCE_DIR)/../Extensions/corecrypto/algorithms \
+	-I$(SOURCE_DIR)/../Extensions/corecrypto/algorithms/yarrow
+CORECRYPTO_BUILTIN_OBJS = \
+	cc_debug.o cc_digest.o cc_functions.o cc_kext_main.o cckprng.o \
+	aes_ecb.o corecrypto_sha512_builtin.o md5_impl.o comp.o smf.o sha1.o \
+	sha1mod.o prng.o aes128.o aes_cbc.o md5.o \
+	yarrowUtils.o pdcrypto_digest_final.o corecrypto_sha1_builtin.o \
+	pdcrypto_dummy.o
+$(foreach _obj,$(CORECRYPTO_BUILTIN_OBJS),\
+	$(eval $(_obj)_CFLAGS_ADD += $(CORECRYPTO_BUILTIN_CFLAGS)))
+
 ######################################################################
 #END    Machine dependent Makefile fragment for arm
 ######################################################################

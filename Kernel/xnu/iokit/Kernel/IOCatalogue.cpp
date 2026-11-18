@@ -108,6 +108,9 @@ IOCatalogueMetaClassSymbol(const OSMetaClass *meta, bool *needsRelease)
 	if (!classSym) {
 		return NULL;
 	}
+	if (gIOClassKey && *(const uintptr_t *)classSym == *(const uintptr_t *)gIOClassKey) {
+		return classSym;
+	}
 
 	const uint8_t lead = *(const volatile uint8_t *)classSym;
 	if ((lead >= 'A' && lead <= 'Z') ||

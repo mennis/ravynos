@@ -60,7 +60,11 @@ static __unused void*
 VM_UNSLIDE(void* ptr)
 {
     vm_offset_t unslid_ptr;
+#if defined(PTHREAD_BUILTIN)
+    vm_kernel_unslide_or_perm_external((vm_offset_t)ptr, &unslid_ptr);
+#else
     vm_kernel_unslide_or_perm_external(ptr, &unslid_ptr);
+#endif
     return (void*)unslid_ptr;
 }
 

@@ -122,6 +122,7 @@ bool com_apple_filesystems_hfs::start(IOService *provider)
 
 	hfs_init_zones();
 	
+#if !defined(HFS_BUILTIN)
 	hfs_sysctl_register();
 
 	uint32_t num_cpus;
@@ -135,6 +136,7 @@ bool com_apple_filesystems_hfs::start(IOService *provider)
 			_hfs_max_file_origins = 2 * num_cpus;
 		}
 	}
+#endif
 
 	return true;
 }
@@ -143,7 +145,9 @@ void com_apple_filesystems_hfs::stop(IOService *provider)
 {
 	if (vfs_handle) {
 		vfs_fsremove(vfs_handle);
+#if !defined(HFS_BUILTIN)
 		hfs_sysctl_unregister();
+#endif
 		vfs_handle = NULL;
 	}
 

@@ -30,6 +30,8 @@
  *	pthread_support.c
  */
 
+#include "kern_internal.h"
+
 #include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/resourcevar.h>
@@ -1023,7 +1025,11 @@ __psynch_cvsignal(user_addr_t cv, uint32_t cgen, uint32_t cugen,
 	}
 	
 	if (threadport != 0) {
-		th = port_name_to_thread((mach_port_name_t)threadport);
+		th = port_name_to_thread((mach_port_name_t)threadport
+#if defined(PTHREAD_BUILTIN)
+		    , PORT_TO_THREAD_NONE
+#endif
+		    );
 		if (th == THREAD_NULL) {
 			return ESRCH;
 		}

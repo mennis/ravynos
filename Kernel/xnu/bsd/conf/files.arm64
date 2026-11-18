@@ -23,3 +23,75 @@ bsd/dev/arm64/sdt_arm.c		optional config_dtrace
 bsd/dev/pgtrace/pgtrace_dev.c   optional config_pgtrace_nonkext
 
 bsd/kern/bsd_stubs.c		standard
+
+# pthread.kext cannot be loaded on arm64 until a prelink/loading path exists.
+# Build its implementation into the kernel; bsd_init registers its shim table.
+../Extensions/pthread/kern_init.c	standard
+../Extensions/pthread/kern_support.c	standard
+bsd/pthread/pthread_kext_synch.c	standard
+
+# hfs.kext cannot be loaded on arm64 until a prelink/loading path exists.
+# Build it in and register it immediately after the kernel VFS table is ready.
+../Extensions/hfs/core/hfs_resize.c	standard
+../Extensions/hfs/core/hfs_vnops.c	standard
+../Extensions/hfs/core/hfs_btreeio.c	standard
+../Extensions/hfs/core/BTreeNodeOps.c	standard
+../Extensions/hfs/core/BTree.c	standard
+../Extensions/hfs/core/rangelist.c	standard
+../Extensions/hfs/core/hfs_journal.c	standard
+../Extensions/hfs/core/hfs_fsinfo.c	standard
+../Extensions/hfs/core/hfs_chash.c	standard
+../Extensions/hfs/core/hfs_xattr.c	standard
+../Extensions/hfs/core/FileIDsServices.c	standard
+../Extensions/hfs/core/hfs_extents.c	standard
+../Extensions/hfs/core/hfs_endian.c	standard
+../Extensions/hfs/core/hfs_cprotect.c	standard
+../Extensions/hfs/core/hfs_readwrite.c	standard
+../Extensions/hfs/core/CatalogUtilities.c	standard
+../Extensions/hfs/core/BTreeWrapper.c	standard
+../Extensions/hfs/core/hfs_catalog.c	standard
+../Extensions/hfs/core/hfs_hotfiles.c	standard
+../Extensions/hfs/core/hfs_quota.c	standard
+../Extensions/hfs/core/hfs_lookup.c	standard
+../Extensions/hfs/core/hfs_search.c	standard
+../Extensions/hfs/core/hfs_vfsops.c	standard
+../Extensions/hfs/core/BTreeAllocate.c	standard
+../Extensions/hfs/core/VolumeAllocation.c	standard
+../Extensions/hfs/core/hfs_cnode.c	standard
+../Extensions/hfs/core/BTreeTreeOps.c	standard
+../Extensions/hfs/core/BTreeMiscOps.c	standard
+../Extensions/hfs/core/FileExtentMapping.c	standard
+../Extensions/hfs/core/BTreeNodeReserve.c	standard
+../Extensions/hfs/core/hfs_vfsutils.c	standard
+../Extensions/hfs/core/hfs_attrlist.c	standard
+../Extensions/hfs/core/MacOSStubs.c	standard
+../Extensions/hfs/core/BTreeScanner.c	standard
+../Extensions/hfs/core/UnicodeWrappers.c	standard
+../Extensions/hfs/core/hfs_notification.c	standard
+../Extensions/hfs/core/hfs_link.c	standard
+../Extensions/hfs/core/hfs_iokit.cpp	standard
+../Extensions/hfs/hfs_encodings/hfs_encodinghint.c	standard
+
+# corecrypto.kext cannot be loaded on arm64 until a prelink/loading path exists.
+# The kernel already supplies cc_clear and cc_cmp_safe, so do not compile the
+# duplicate copies from the kext.
+../Extensions/corecrypto/cc_debug.c	standard
+../Extensions/corecrypto/cc_digest.c	standard
+../Extensions/corecrypto/kext/cc_functions.c	standard
+../Extensions/corecrypto/kext/cc_kext_main.c	standard
+../Extensions/corecrypto/algorithms/cckprng.c	standard
+../Extensions/corecrypto/algorithms/aes_ecb.c	standard
+bsd/crypto/corecrypto_sha512_builtin.cpp	standard
+../Extensions/corecrypto/algorithms/md5_impl.cpp	standard
+../Extensions/corecrypto/algorithms/yarrow/comp.c	standard
+../Extensions/corecrypto/algorithms/yarrow/smf.c	standard
+../Extensions/corecrypto/algorithms/sha1.c	standard
+../Extensions/corecrypto/algorithms/yarrow/sha1mod.c	standard
+../Extensions/corecrypto/algorithms/yarrow/prng.c	standard
+../Extensions/corecrypto/algorithms/aes128.c	standard
+../Extensions/corecrypto/algorithms/aes_cbc.c	standard
+../Extensions/corecrypto/algorithms/md5.c	standard
+../Extensions/corecrypto/algorithms/yarrow/yarrowUtils.c	standard
+../Extensions/corecrypto/algorithms/pdcrypto_digest_final.c	standard
+bsd/crypto/corecrypto_sha1_builtin.cpp	standard
+../Extensions/corecrypto/algorithms/pdcrypto_dummy.c	standard

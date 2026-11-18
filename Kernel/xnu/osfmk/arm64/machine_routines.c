@@ -1849,7 +1849,16 @@ ml_get_hwclock()
 	// "Reads of CNTPCT[_EL0] can occur speculatively and out of order relative
 	// to other instructions executed on the same processor."
 	__builtin_arm_isb(ISB_SY);
+#if defined(BCM2837)
+	/*
+	 * Under xnuhv (Hypervisor.framework) a CNTPCT_EL0 read traps to the VMM,
+	 * and this runs twice per syscall. CNTVCT_EL0 does not trap, and xnuhv
+	 * keeps the vtimer offset at 0, so it holds the same count.
+	 */
+	timebase = __builtin_arm_rsr64("CNTVCT_EL0");
+#else
 	timebase = __builtin_arm_rsr64("CNTPCT_EL0");
+#endif
 
 	return timebase;
 }

@@ -1,5 +1,8 @@
 #include <sys/systm.h>
 #include <mach/mach_types.h>
+#if defined(CORECRYPTO_BUILTIN)
+#include <kern/debug.h>
+#endif
 #include "register_crypto.h"
 #include "prng_random.h"
 #include <corecrypto/cckprng.h>
@@ -38,6 +41,14 @@ kern_return_t cc_kext_start(kmod_info_t * ki, void *d)
 
     return KERN_SUCCESS;
 }
+
+#if defined(CORECRYPTO_BUILTIN)
+void
+corecrypto_kext_init(void)
+{
+	(void)cc_kext_start(NULL, NULL);
+}
+#endif
 
 kern_return_t cc_kext_stop(kmod_info_t *ki, void *d)
 {

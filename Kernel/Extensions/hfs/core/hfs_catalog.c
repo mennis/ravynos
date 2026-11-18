@@ -1867,7 +1867,8 @@ catrec_update(const CatalogKey *ckp, CatalogRecord *crp, struct update_state *st
 			dir->textEncoding = descp->cd_encoding;
 		}
 		dir->folderCount      = attrp->ca_dircount;
-		bcopy(&attrp->ca_finderinfo[0], &dir->userInfo, 32);
+		bcopy(&attrp->ca_finderinfo[0], &dir->userInfo, 16);
+		bcopy(&attrp->ca_finderinfo[16], &dir->finderInfo, 16);
 		/*
 		 * Update the BSD Info if it was already initialized on
 		 * disk or if the runtime values have been modified.
@@ -1934,7 +1935,8 @@ catrec_update(const CatalogKey *ckp, CatalogRecord *crp, struct update_state *st
 		} else {
 			file->textEncoding = descp->cd_encoding;
 		}
-		bcopy(&attrp->ca_finderinfo[0], &file->userInfo, 32);
+		bcopy(&attrp->ca_finderinfo[0], &file->userInfo, 16);
+		bcopy(&attrp->ca_finderinfo[16], &file->finderInfo, 16);
 		/*
 		 * Update the BSD Info if it was already initialized on
 		 * disk or if the runtime values have been modified.
@@ -4201,7 +4203,8 @@ buildrecord(struct cat_attr *attrp, cnid_t cnid, int std_hfs, u_int32_t encoding
 			crp->hfsPlusFolder.backupDate = 0;
 			crp->hfsPlusFolder.textEncoding = encoding;
 			crp->hfsPlusFolder.folderCount = 0;
-			bcopy(attrp->ca_finderinfo, &crp->hfsPlusFolder.userInfo, 32);
+			bcopy(&attrp->ca_finderinfo[0], &crp->hfsPlusFolder.userInfo, 16);
+			bcopy(&attrp->ca_finderinfo[16], &crp->hfsPlusFolder.finderInfo, 16);
 			bsdp = &crp->hfsPlusFolder.bsdInfo;
 			bsdp->special.linkCount = 1;
 			*recordSize = sizeof(HFSPlusCatalogFolder);
@@ -4217,7 +4220,8 @@ buildrecord(struct cat_attr *attrp, cnid_t cnid, int std_hfs, u_int32_t encoding
 			crp->hfsPlusFile.backupDate = 0;
 			crp->hfsPlusFile.textEncoding = encoding;
 			crp->hfsPlusFile.reserved2 = 0;
-			bcopy(attrp->ca_finderinfo, &crp->hfsPlusFile.userInfo, 32);
+			bcopy(&attrp->ca_finderinfo[0], &crp->hfsPlusFile.userInfo, 16);
+			bcopy(&attrp->ca_finderinfo[16], &crp->hfsPlusFile.finderInfo, 16);
 			bsdp = &crp->hfsPlusFile.bsdInfo;
 			/* BLK/CHR need to save the device info */
 			if (type == S_IFBLK || type == S_IFCHR) {
@@ -4243,7 +4247,8 @@ buildrecord(struct cat_attr *attrp, cnid_t cnid, int std_hfs, u_int32_t encoding
 			crp->hfsFolder.folderID = cnid;
 			crp->hfsFolder.createDate = createtime;
 			crp->hfsFolder.modifyDate = createtime;
-			bcopy(attrp->ca_finderinfo, &crp->hfsFolder.userInfo, 32);
+			bcopy(&attrp->ca_finderinfo[0], &crp->hfsFolder.userInfo, 16);
+			bcopy(&attrp->ca_finderinfo[16], &crp->hfsFolder.finderInfo, 16);
 			*recordSize = sizeof(HFSCatalogFolder);
 		} else {
 			bzero(crp, sizeof(HFSCatalogFile));
@@ -4426,7 +4431,8 @@ getbsdattr(struct hfsmount *hfsmp, const struct HFSPlusCatalogFile *crp, struct 
 	
 	attrp->ca_fileid = crp->fileID;
 
-	bcopy(&crp->userInfo, attrp->ca_finderinfo, 32);
+	bcopy(&crp->userInfo, &attrp->ca_finderinfo[0], 16);
+	bcopy(&crp->finderInfo, &attrp->ca_finderinfo[16], 16);
 }
 
 #if CONFIG_HFS_STD
@@ -4521,7 +4527,8 @@ promoteattr(struct hfsmount *hfsmp, const CatalogRecord *dataPtr, struct HFSPlus
 		crp->backupDate       = LocalToUTC(folder->backupDate);
 		crp->reserved1        = folder->valence;
 		crp->reserved2        = 0;
-		bcopy(&folder->userInfo, &crp->userInfo, 32);
+		bcopy(&folder->userInfo, &crp->userInfo, 16);
+		bcopy(&folder->finderInfo, &crp->finderInfo, 16);
 	} else /* file */ {
 		const struct HFSCatalogFile * file;
 

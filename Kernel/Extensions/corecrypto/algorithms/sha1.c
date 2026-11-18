@@ -44,6 +44,8 @@ const struct ccdigest_info ccsha1_eay_di = {
 	.final = pdcdigest_final_64be
 };
 
+#if !defined(CORECRYPTO_BUILTIN)
 const struct ccdigest_info *ccsha1_di(void) {
 	return &ccsha1_ltc_di;
 }
+#endif

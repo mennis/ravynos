@@ -517,7 +517,7 @@ hfs_mount(struct mount *mp, vnode_t devvp, user_addr_t data, vfs_context_t conte
 			hfsmp->reserveBlocks = ((u_int64_t)hfsmp->totalBlocks * HFS_MINFREE) / 100;
 			hfsmp->reserveBlocks = MIN(hfsmp->reserveBlocks, HFS_MAXRESERVE / hfsmp->blockSize);
 		}
-#if	TARGET_OS_OSX 
+#if	TARGET_OS_OSX && !defined(HFS_BUILTIN)
 		// increment kext retain count
 		OSIncrementAtomic(&hfs_active_mounts);
 		OSKextRetainKextWithLoadTag(OSKextGetCurrentLoadTag());
@@ -2228,7 +2228,7 @@ hfs_unmount(struct mount *mp, int mntflags, vfs_context_t context)
 	hfs_free(hfsmp, sizeof(*hfsmp));
 
 	// decrement kext retain count
-#if	TARGET_OS_OSX
+#if	TARGET_OS_OSX && !defined(HFS_BUILTIN)
 	OSDecrementAtomic(&hfs_active_mounts);
 	OSKextReleaseKextWithLoadTag(OSKextGetCurrentLoadTag());
 #endif

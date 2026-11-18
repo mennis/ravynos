@@ -26,6 +26,12 @@ ifeq ($(filter $(PLATFORM),$(SUPPORTED_PLATFORMS)),)
 $(error Unsupported PLATFORM $(PLATFORM))
 endif
 
+# ravynOS's x86_64 build links the profile runtime from its own compiler-rt.
+# Other architectures link against the toolchain's runtime only.
+ifeq ($(CURRENT_ARCH_CONFIG),X86_64)
+LD_KERNEL_RT ?= -L$(OBJROOT)/../../Libraries/llvm_target/compiler-rt/lib/ravynos -lclang_rt.profile_osx
+endif
+
 ifeq ($(BUILD_JSON_COMPILATION_DATABASE),1)
 do_build_setup::
 	$(_v)$(CAT) > $(OBJPATH)/compile_commands.json < /dev/null
@@ -141,7 +147,7 @@ ifeq ($(PRE_LTO),1)
 else
 	$(call makelog,$(ColorL)LD$(Color0)  $(ColorLF)$(@F)$(Color0))
 	$(_v)$(CAT) $(filter %.filelist,$+) < /dev/null > link.filelist
-	$(_v)$(LD) $(LDFLAGS_KERNEL) $(LDFLAGS_KERNEL_EXPORTS) -filelist link.filelist version.o $(filter %.o,$+) -o $@ $(LD_KERNEL_LIBS) $(LD_KERNEL_ARCHIVES) -L$(OBJROOT)/../../Libraries/llvm_target/compiler-rt/lib/ravynos -lclang_rt.profile_osx
+	$(_v)$(LD) $(LDFLAGS_KERNEL) $(LDFLAGS_KERNEL_EXPORTS) -filelist link.filelist version.o $(filter %.o,$+) -o $@ $(LD_KERNEL_LIBS) $(LD_KERNEL_ARCHIVES) $(LD_KERNEL_RT)
 endif
 
 
