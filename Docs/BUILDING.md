@@ -40,6 +40,15 @@ __On macOS:__
 
 __On Linux (tested on Arch 2025/12/21):__
 * Install `csh`, `bison`, `binutils`, `flex`, `libdispatch`, the LLVM linker `lld`, and `acl` (xar needs its `sys/acl.h`; on Debian and Ubuntu the package is `libacl1-dev`)
+* Ubuntu 24.04 has no libdispatch package. Build it from Swift's sources and install it into `/usr/local`, where the build finds it without extra flags:
+
+      git clone --depth 1 https://github.com/swiftlang/swift-corelibs-libdispatch.git
+      cmake -S swift-corelibs-libdispatch -B dispatch-build -G Ninja \
+          -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 \
+          -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+      ninja -C dispatch-build
+      sudo ninja -C dispatch-build install
+      sudo ldconfig
 * Use clang, not gcc. Either symlink `cc` and `c++` to clang (`rm -f /usr/bin/cc /usr/bin/c++; ln -sf clang /usr/bin/cc; ln -sf clang++ /usr/bin/c++`), or name the compilers on the bmake command line. For example, with Ubuntu's versioned clang 18:
 
       bmake -m $PWD/BSD/share/mk NO_ROOT=1 world CC=clang-18 CXX=clang++-18 HOST_CC=clang-18 HOST_CXX=clang++-18 HOST_AR=llvm-ar-18
